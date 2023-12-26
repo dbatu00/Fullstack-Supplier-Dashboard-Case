@@ -18,6 +18,11 @@ connection.once('open', () => {
   console.log(connection.name);
 })
 
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working!' });
+});
+
+
 app.get('/api/firstFiveDocuments', async (req, res) => {
   try {
     const collection = connection.db.collection('Orders');
@@ -25,7 +30,7 @@ app.get('/api/firstFiveDocuments', async (req, res) => {
     
     // Print the first 5 documents to the terminal
     documents.slice(0, 5).forEach(doc => console.log(doc));
-
+    console.log('Response:', JSON.stringify(documents));
     res.json(documents);
   } catch (error) {
     console.error(error);
