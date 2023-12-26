@@ -10,49 +10,97 @@ app.use(express.json());
 
 const uri = "mongodb+srv://admin:admin@cluster0.9f7cuu3.mongodb.net/LoncaCase?retryWrites=true&w=majority";
 
-mongoose.connect(uri);
-const connection = mongoose.connection;
-
-connection.once('open', () => {
-  console.log(`MongoDB database connection to ${connection.name} established successfully`);
-})
-
-//table
-app.get('/api/totalSales', (req, res) => {
-  try{
-
-    const vendorName = req.query.vendor; // Get vendor name from the request query parameters
-    console.log(`Received vendor name from React app: ${vendorName}`);
-    res.json({ message: 'API is working!' });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
+const vendorSchema = new mongoose.Schema({
+  _id: mongoose.Schema.Types.ObjectId,
+  name: String,
 });
 
-//graph
-app.get('/api/monthlySales', async (req, res) => {
+const Vendor = mongoose.model('Vendor', vendorSchema);
+
+
+function connectToDatabase() {
+  return new Promise((resolve, reject) => {
+    mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+    const connection = mongoose.connection;
+
+    connection.on('error', (error) => {
+      console.error('MongoDB connection error:', error);
+      reject(error);
+    });
+
+    connection.once('open', () => {
+      console.log(`MongoDB database connection to ${connection.name} established successfully`);
+      resolve();
+    });
+  });
+}
+
+async function startServer() {
   try {
+    await connectToDatabase();
 
-    const vendorName = req.query.vendor; // Get vendor name from the request query parameters
-    console.log(`Received vendor name from React app: ${vendorName}`);
+    const ordersCollection = mongoose.connection.db.collection('Orders');
+    const vendorsCollection = mongoose.connection.db.collection('Vendors');
+    const parentProductsCollection = mongoose.connection.db.collection('parent_products');
 
-    const collection = connection.db.collection('Orders');
-    const documents = await collection.find({}).limit(5).toArray();
-    
-    // Print the first 5 documents to the terminal
-    //documents.slice(0, 5).forEach(doc => console.log(doc));
-    //console.log('Response:', JSON.stringify(documents));
-    
-    res.json(documents);
+    //table
+    app.get('/api/totalSales', async (req, res) => {
+    try{
+
+      const vendorName = req.query.vendor; // Get vendor name from the request query parameters
+      console.log(`Received vendor name from React app: ${vendorName}`);
+
+      //res.json({ message: 'API is working!' });
+      //const collection = connection.db.collection('Orders');
+
+      const vendor = await vendorsCollection.findOne({ name: vendorName });
+
+      // Check if the vendor exists
+      if (!vendor) {
+        return res.status(404).json({ message: 'Vendor not found' });
+      }
+
+      // Extract the vendor id from the found vendor
+      const vendorId = vendor._id;
+
+      // Return the vendor id to the React app
+      res.json({ vendorId });
+
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  });
+
+  //graph
+  app.get('/api/monthlySales', async (req, res) => {
+    try {
+
+      const vendorName = req.query.vendor; // Get vendor name from the request query parameters
+      console.log(`Received vendor name from React app: ${vendorName}`);
+
+      //const collection = connection.db.collection('Orders');
+      const documents = await ordersCollection.find({}).limit(5).toArray();
+
+      res.json(documents);
+
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  });
+
+
+    app.listen(port, () => {
+      console.log(`Server is running on port: ${port}`);
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error('Error connecting to MongoDB:', error);
   }
-});
+}
 
-app.listen(port, () => {
-    console.log(`Server is running on port: ${port}`);
-});
+startServer();
+
 
