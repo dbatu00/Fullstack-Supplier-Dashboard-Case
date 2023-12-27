@@ -51,7 +51,8 @@ async function startServer() {
       if (products.length === 0) {return res.status(404).json({ message: 'Products not found' });}     
       console.log('Products by vendor:', products);
 
-
+      //listeyi struct yapıp her bir product'ın kaç sattığını bul
+      //0'dan fazla satan productları, satış sayıları ile gönder
       const ordersWithProducts = [];
       for (const product of products) {
         const orderIdWithProduct = await ordersCollection.findOne({ 'cart_item.product': product._id });
