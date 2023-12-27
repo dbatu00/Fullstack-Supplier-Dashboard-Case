@@ -10,17 +10,9 @@ app.use(express.json());
 
 const uri = "mongodb+srv://admin:admin@cluster0.9f7cuu3.mongodb.net/LoncaCase?retryWrites=true&w=majority";
 
-const vendorSchema = new mongoose.Schema({
-  _id: mongoose.Schema.Types.ObjectId,
-  name: String,
-});
-
-const Vendor = mongoose.model('Vendor', vendorSchema);
-
-
 function connectToDatabase() {
   return new Promise((resolve, reject) => {
-    mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    mongoose.connect(uri);
 
     const connection = mongoose.connection;
 
@@ -48,63 +40,30 @@ async function startServer() {
     app.get('/api/totalSales', async (req, res) => {
     try{
 
-      const vendorName = req.query.vendor; // Get vendor name from the request query parameters
+      const vendorName = req.query.vendor;
       console.log(`Received vendor name from React app: ${vendorName}`);
-
       const vendor = await vendorsCollection.findOne({ name: vendorName });
-      if (!vendor) {
-        return res.status(404).json({ message: 'Vendor not found' });
-      }
-
+      if (!vendor) {return res.status(404).json({ message: 'Vendor not found' });}
       const vendorId = vendor._id;
-      const products = await parentProductsCollection.find({ 'vendor': vendorId }).limit(50).toArray();
       
-      if (products.length === 0) {
-        return res.status(404).json({ message: 'Products not found' });
-      }
-      
-      /*
-      console.log('First product by vendor:', products[0]); 
-      
-      //const orders = await ordersCollection.find({''})
 
-      //res.json(products);
-
-      const product = products[0];
-
-      const orderIdWithProduct = await ordersCollection.findOne({ 'cart_item.product': product._id });
-
-      if (!orderIdWithProduct) {
-        return res.status(404).json({ message: 'Order not found for the given product' });
-      }
-
-      console.log('Order with the product:', orderIdWithProduct);
-
-      // Return the order to the React app
-      res.json(orderIdWithProduct);
-      */
-
-      // Log detailed information for debugging
+      const products = await parentProductsCollection.find({ 'vendor': vendorId }).toArray();
+      if (products.length === 0) {return res.status(404).json({ message: 'Products not found' });}     
       console.log('Products by vendor:', products);
 
-      const ordersWithProducts = [];
 
+      const ordersWithProducts = [];
       for (const product of products) {
         const orderIdWithProduct = await ordersCollection.findOne({ 'cart_item.product': product._id });
 
         if (orderIdWithProduct) {
           ordersWithProducts.push(orderIdWithProduct);
+          console.log("Order ID:", orderIdWithProduct);
         }
       }
+      if (ordersWithProducts.length === 0) {return res.status(404).json({ message: 'No orders found for any product' });}
 
-      if (ordersWithProducts.length === 0) {
-        return res.status(404).json({ message: 'No orders found for any product' });
-      }
 
-      // Log detailed information for debugging
-      console.log('Orders with products:', ordersWithProducts);
-
-      // Return the orders to the React app
       res.json(ordersWithProducts);
 
     } catch (error) {
@@ -120,7 +79,6 @@ async function startServer() {
       const vendorName = req.query.vendor; // Get vendor name from the request query parameters
       console.log(`Received vendor name from React app: ${vendorName}`);
 
-      //const collection = connection.db.collection('Orders');
       const documents = await ordersCollection.find({}).limit(5).toArray();
 
       res.json(documents);
