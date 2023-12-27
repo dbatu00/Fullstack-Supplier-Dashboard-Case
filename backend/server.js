@@ -51,21 +51,61 @@ async function startServer() {
       const vendorName = req.query.vendor; // Get vendor name from the request query parameters
       console.log(`Received vendor name from React app: ${vendorName}`);
 
-      //res.json({ message: 'API is working!' });
-      //const collection = connection.db.collection('Orders');
-
       const vendor = await vendorsCollection.findOne({ name: vendorName });
-
-      // Check if the vendor exists
       if (!vendor) {
         return res.status(404).json({ message: 'Vendor not found' });
       }
 
-      // Extract the vendor id from the found vendor
       const vendorId = vendor._id;
+      const products = await parentProductsCollection.find({ 'vendor': vendorId }).limit(50).toArray();
+      
+      if (products.length === 0) {
+        return res.status(404).json({ message: 'Products not found' });
+      }
+      
+      /*
+      console.log('First product by vendor:', products[0]); 
+      
+      //const orders = await ordersCollection.find({''})
 
-      // Return the vendor id to the React app
-      res.json({ vendorId });
+      //res.json(products);
+
+      const product = products[0];
+
+      const orderIdWithProduct = await ordersCollection.findOne({ 'cart_item.product': product._id });
+
+      if (!orderIdWithProduct) {
+        return res.status(404).json({ message: 'Order not found for the given product' });
+      }
+
+      console.log('Order with the product:', orderIdWithProduct);
+
+      // Return the order to the React app
+      res.json(orderIdWithProduct);
+      */
+
+      // Log detailed information for debugging
+      console.log('Products by vendor:', products);
+
+      const ordersWithProducts = [];
+
+      for (const product of products) {
+        const orderIdWithProduct = await ordersCollection.findOne({ 'cart_item.product': product._id });
+
+        if (orderIdWithProduct) {
+          ordersWithProducts.push(orderIdWithProduct);
+        }
+      }
+
+      if (ordersWithProducts.length === 0) {
+        return res.status(404).json({ message: 'No orders found for any product' });
+      }
+
+      // Log detailed information for debugging
+      console.log('Orders with products:', ordersWithProducts);
+
+      // Return the orders to the React app
+      res.json(ordersWithProducts);
 
     } catch (error) {
       console.error(error);
