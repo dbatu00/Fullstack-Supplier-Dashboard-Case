@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 
 function App() {
   const [apiData, setApiData] = useState(null);
-  const [vendor, setVendor] = useState('');
+  // Set the initial value for the 'vendor' state
+  const [vendor, setVendor] = useState('Simone');
 
   const fetchData = async (endpoint) => {
     try {
