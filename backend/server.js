@@ -6,11 +6,19 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const migrationDone = 0;
+const namesDone = 1;
+const demoDone = 0;
 
 app.use(cors());
 app.use(express.json());
 
 const uri = "mongodb+srv://admin:admin@cluster0.9f7cuu3.mongodb.net/LoncaCase?retryWrites=true&w=majority";
+
+/*demo sale
+product oid: 61aac288433e0592d8baf554
+vendor oid: 61aac7f29955ef6272942997
+vendor name: 'Dilvin'
+*/
 
 function connectToDatabase() {
   return new Promise((resolve, reject) => {
@@ -42,25 +50,67 @@ async function startServer() {
     const parentProductsCollection = mongoose.connection.db.collection('parent_products');
     const vendorSalesCollection = mongoose.connection.db.collection('vendor_sales');
 
-    if (!migrationDone) {
+    if (!namesDone) {
       console.log("Migration starts");
     
       try {
-        // Use await with find to ensure asynchronous operation completion
-        const documents = await vendorsCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray();
+        const vendors = await vendorsCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray();
     
-        if (documents.length === 0) {
+        if (vendors.length === 0) {
           console.log('No vendors found');
         } else {
           console.log('All vendor names:');
-          documents.forEach(doc => {
+          vendors.forEach(doc => {
             console.log(`ID: ${doc._id}, Name: ${doc.name}`);
           });
         }
       } catch (error) {
-        console.error('Error fetching documents:', error);
+        console.error('Error fetching vendors:', error);
       }
     }
+
+
+    if(!demoDone)
+    {
+      console.log("demo starts")
+      const vendorID = new mongoose.Types.ObjectId('61aac7f29955ef6272942997');
+      const productId = new mongoose.Types.ObjectId('61aac288433e0592d8baf554');
+      
+      try {
+        // Query to find orders that contain the specified product ID
+        const query = { 'cart_item.product': productId };
+    
+        // Projection to include only relevant fields in the result
+        const projection = { _id: 1, cart_item: { $elemMatch: { product: productId } }, payment_at: 1 };
+    
+        const order = await ordersCollection.findOne(query, { projection });
+    
+        // Print the order information
+        if (order) {
+          console.log('Order ID:', order._id);
+          console.log('Order Date:', order.payment_at);
+    
+          order.cart_item.forEach(item => {
+            console.log('Product ID:', item.product);
+            console.log('Quantity:', item.quantity);
+            console.log('Margin:', item.vendor_margin);
+            console.log('------------------------');
+          });
+    
+          console.log('\n');
+        } else {
+          console.log('Order not found for the specified product ID.');
+        }
+    
+        return order;
+      } catch (error) {
+        console.error('Error:', error);
+        throw error;
+      }
+      
+
+    }
+
   
   //table
   app.get('/api/totalSales', async (req, res) => {
@@ -140,9 +190,9 @@ async function startServer() {
       const vendorName = req.query.vendor; // Get vendor name from the request query parameters
       console.log(`Received vendor name from React app: ${vendorName}`);
   
-      const documents = await ordersCollection.find({}).limit(5).toArray();
+      const orders = await ordersCollection.find({}).limit(5).toArray();
   
-      res.json(documents);
+      res.json(orders);
   
     } catch (error) {
       console.error(error);
