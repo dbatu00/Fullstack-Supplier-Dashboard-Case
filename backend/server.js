@@ -98,15 +98,33 @@ async function startServer() {
           });
     
           console.log('\n');
-        } else {
-          console.log('Order not found for the specified product ID.');
-        }
-    
-        return order;
+
+            // Push the order information to the vendor sales collection
+          const vendorSalesDocument = {
+          orderId: order._id,
+          productInfo: {
+            productId: productId,
+            quantity: order.cart_item[0].quantity, // Assuming there's only one item in the cart for simplicity
+            margin: order.cart_item[0].vendor_margin,
+          },
+          orderDate: order.payment_at,
+          };
+
+          const result = await vendorSalesCollection.insertOne(vendorSalesDocument);
+          console.log('Inserted into vendor_sales collection:', result);
+      
+
+          } else {
+            console.log('Order not found for the specified product ID.');
+          }
+          
+        
       } catch (error) {
         console.error('Error:', error);
         throw error;
       }
+
+
       
 
     }
