@@ -19,6 +19,41 @@ vendor oid: 61aac7f29955ef6272942997
 vendor name: 'Dilvin'
 */
 
+
+// MonthlySale struct
+class MonthlySale {
+  constructor(year, month) {
+    this.year = year;
+    this.month = month;
+    this.quantitySold = 0;
+    this.totalRevenue = 0;
+  }
+
+  update(quantity, revenue) {
+    this.quantitySold += quantity;
+    this.totalRevenue += revenue;
+  }
+}
+
+// MonthlySalesData structure
+class MonthlySalesData {
+  constructor() {
+    this.sales = [];
+  }
+
+  findOrCreate(year, month) {
+    const existingSale = this.sales.find(sale => sale.year === year && sale.month === month);
+
+    if (existingSale) {
+      return existingSale;
+    } else {
+      const newSale = new MonthlySale(year, month);
+      this.sales.push(newSale);
+      return newSale;
+    }
+  }
+}
+
 function connectToDatabase() {
   return new Promise((resolve, reject) => {
     mongoose.connect(uri);
@@ -207,26 +242,51 @@ async function startServer() {
       }
     });
     
-    //graph
+    // graph
     app.get('/api/monthlySales', async (req, res) => {
       try {
-    
-        const vendorName = req.query.vendor; // Get vendor name from the request query parameters
-        console.log(`Received vendor name from React app: ${vendorName}`);
-    
-        const orders = await ordersCollection.find({}).limit(5).toArray();
-    
-        res.json(orders);
-    
+        // get vendor name
+        const vendorName = req.query.vendor;
+        console.log(`MonthlySalesAPI: Received vendor name from React app: ${vendorName}`);
+
+        // get vendor
+        const vendor = await vendorsCollection.findOne({ name: vendorName });
+        if (!vendor) {
+          console.log(`MonthlySalesAPI: Vendor not found`);
+          return res.status(404).json({ message: 'Vendor not found' });
+        } else {
+          console.log(`MonthlySalesAPI: Vendor found: ${vendorName}`);
+        }
+        const vendorId = vendor._id;
+
+        // get sales
+        const sales = await vendorSalesCollection.find({ 'productInfo.vendorId': vendorId }).toArray();
+
+        // create MonthlySalesData instance
+        const monthlySalesData = new MonthlySalesData();
+
+        for (const sale of sales) {
+          const orderDate = new Date(sale.orderDate);
+          const year = orderDate.getUTCFullYear();
+          const month = orderDate.getUTCMonth() + 1; // months are 0-based
+
+          const monthlySale = monthlySalesData.findOrCreate(year, month);
+
+          // Update quantity and revenue for the monthly sale
+          monthlySale.update(sale.productInfo.quantity, sale.productInfo.quantity * sale.productInfo.margin);
+        }
+
+        return res.json(monthlySalesData.sales);
+
       } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal Server Error' });
       }
     });
 
-      app.listen(port, () => {
-        console.log(`Server is running on port: ${port}`);
-      });
+    app.listen(port, () => {
+      console.log(`Server is running on port: ${port}`);
+    });
 
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
