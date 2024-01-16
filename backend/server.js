@@ -159,7 +159,6 @@ async function startServer() {
       console.log('Finished updating vendorIds');
 
     }
-
     ///////ADD VENDOR ID TO VENDOR_SALES/////////////*/
 
 
@@ -169,64 +168,38 @@ async function startServer() {
         
         //get vendorname
         const vendorName = req.query.vendor;
-        console.log(`Received vendor name from React app: ${vendorName}`);
+        console.log(`totalSalesAPI: Received vendor name from React app: ${vendorName}`);
     
     
-        //get vendor collection
+        //get vendor 
         const vendor = await vendorsCollection.findOne({ name: vendorName });
         if (!vendor) 
         {
-          console.log(`Vendor not found`);
+          console.log(`totalSalesAPI: Vendor not found`);
           return res.status(404).json({ message: 'Vendor not found' });
         }
-        else console.log(`Vendor found: ${vendorName}`)
+        else console.log(`totalSalesAPI: Vendor found: ${vendorName}`)
         const vendorId = vendor._id;
         
     
-        //get products collection
-        const products = await parentProductsCollection.find({ 'vendor': vendorId }).toArray();
-        if (products.length === 0) 
+        //get sales 
+        const sales = await vendorSalesCollection.find({ 'productInfo.vendorId': vendorId }).toArray();
+        
+        if (sales.length === 0) 
         {
-          console.log(`Products not found`); 
-          return res.status(404).json({ message: 'Products not found' });
+          console.log(`totalSalesAPI: Sales not found`); 
+          return res.status(404).json({ message: 'Sales not found' });
         }
-        else console.log('Products found');
+        else console.log('totalSalesAPI: Sales found');
             
         
     
         //time to read the console for debugging before next function starts
         const start = Date.now();
-        while (Date.now() - start < 2000) {}
+        while (Date.now() - start < 1000) {}
     
-    
-        let searchedProductCount = 0;
-        //for each product that a vendor sales:
-        //  1-)search order list to find a cart that has it
-        //  2-)push the order into ordersOfProducts list
-        //  3-)send response
-        const ordersOfProducts = [];
-        for (const product of products) 
-        {
-          searchedProductCount++;
-          const orderOfProduct = await ordersCollection.findOne({ 'cart_item.product': product._id });
-          console.log(`Searching order for ${searchedProductCount} out of ${products.length} products`);
-    
-          if (orderOfProduct) 
-          {
-            ordersOfProducts.push(orderOfProduct);
-            console.log("Order ID:", orderOfProduct);
-          }
-        }
-        if (ordersOfProducts.length === 0) 
-        {
-          console.log('No orders found for any product');
-          return res.status(404).json({ message: 'No orders found for any product' });
-        }
-        else
-        {
-          console.log('Orders sent via API');
-          return res.json(ordersOfProducts);
-        } 
+        return res.json(sales);
+        
     
       } catch (error) {
         console.error(error);
