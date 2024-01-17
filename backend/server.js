@@ -114,13 +114,25 @@ async function startServer() {
           return res.status(404).json({ message: 'Vendor or Sales not found' });
         }
 
-        return res.json(sales);
+        // Modify the response to exclude _id and vendorId
+        const modifiedSales = sales.map(sale => ({
+          orderId: sale.orderId,
+          productInfo: {
+            productId: sale.productInfo.productId,
+            quantity: sale.productInfo.quantity,
+            margin: sale.productInfo.margin,
+          },
+          orderDate: sale.orderDate,
+        }));
+
+        return res.json(modifiedSales);
 
       } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal Server Error' });
       }
     });
+
 
     // Route for monthly sales
     app.get('/api/monthlySales', async (req, res) => {
