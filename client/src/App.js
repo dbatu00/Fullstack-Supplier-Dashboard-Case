@@ -2,13 +2,21 @@ import React, { useState } from 'react';
 
 function App() {
   const [loading, setLoading] = useState(false);
+  const [vendor, setVendor] = useState('');
 
   const containerStyle = {
     display: 'flex',
-    justifyContent: 'center', // Center horizontally
-    alignItems: 'flex-start', // Align to the top
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     height: '100vh',
     padding: '20px', // Add some space at the top
+  };
+
+  const inputStyle = {
+    marginBottom: '10px',
+    padding: '8px',
+    fontSize: '16px',
   };
 
   const buttonContainerStyle = {
@@ -29,6 +37,13 @@ function App() {
 
   return (
     <div style={containerStyle}>
+      <input
+        type="text"
+        placeholder="Vendor Name"
+        value={vendor}
+        onChange={(e) => setVendor(e.target.value)}
+        style={inputStyle}
+      />
       <div style={buttonContainerStyle}>
         <button style={buttonStyle} disabled={loading}>
           {loading ? 'Loading...' : 'Monthly Sales'}
