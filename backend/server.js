@@ -75,8 +75,7 @@ function connectToDatabase() {
 
 
 async function startServer() {
-  try 
-  {
+  try {
     await connectToDatabase();
 
     const ordersCollection = mongoose.connection.db.collection('Orders');
@@ -84,185 +83,57 @@ async function startServer() {
     const parentProductsCollection = mongoose.connection.db.collection('parent_products');
     const vendorSalesCollection = mongoose.connection.db.collection('vendor_sales');
 
-
-    /*//////MIGRATION/////////
-    //1-) get vendors
-    //2-) get products of vendors
-    //3-) get sales of the product
-    //4-) push sale info to vendor_sales
-    if (!migrationDone) 
-    {
-      console.log("Migration starts");
-      let searchedVendorCount = 0;
-
-      //1-)get vendor names
-      const vendors = await vendorsCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray();
-      if (vendors.length === 0) 
-        console.log('No vendors found');
-      
-
-      for(const vendor of vendors)
-      {
-        searchedVendorCount++;
-        
-        //2-)get products collection
-        const products = await parentProductsCollection.find({ 'vendor': vendor._id }).toArray();
-        if (products.length != 0) 
-        {
-          console.log("Products found for vendor", searchedVendorCount);
-        }
-          
-        //3-)search orders for carts that have the product
-        let searchedProductCount = 0;
-        //for each product that a vendor lists:
-        //  a-)search order list to find a cart that has it
-        //  b-)get the relevant info and push to vendor_sales collection
-        for (const product of products) 
-        {
-          searchedProductCount++;
-          //a-)get order
-          const query = { 'cart_item.product': product._id };
-          const projection = { _id: 1, cart_item: { $elemMatch: { product: product._id } }, payment_at: 1 };
-          const order = await ordersCollection.findOne(query, { projection });
-
-          console.log(`Searching order for ${searchedProductCount} out of ${products.length} products for ${searchedVendorCount} out of ${vendors.length} vendors`);
-    
-          if (order) 
-          {
-            //b-)Push the order information to the vendor sales collection
-            const vendorSalesDocument = 
-            {
-                orderId: order._id,
-                productInfo: 
-                {
-                  productId: product._id,
-                  quantity: order.cart_item[0].quantity, // Assuming there's only one item in the cart for simplicity
-                  margin: order.cart_item[0].vendor_margin,
-                },
-                orderDate: order.payment_at,
-                }; 
-    
-            const result = await vendorSalesCollection.insertOne(vendorSalesDocument);
-            console.log('Inserted into vendor_sales collection:', result);
-          }
-        }
+    async function getSalesByVendor(vendorName) {
+      const vendor = await vendorsCollection.findOne({ name: vendorName });
+      if (!vendor) {
+        console.log(`Vendor not found`);
+        return null;
       }
-    }
-    ////////MIGRATION////////*/
-    
+      console.log(`Vendor found: ${vendorName}`);
 
-    /*//////ADD VENDOR ID TO VENDOR_SALES//////////////
-    if(!vendorIDadded)
-    {
-      const cursor = vendorSalesCollection.find();
+      const vendorId = vendor._id;
+      const sales = await vendorSalesCollection.find({ 'productInfo.vendorId': vendorId }).toArray();
 
-      // Get the count of documents in the collections
-      const vendorSalesCount = await vendorSalesCollection.countDocuments();
- 
-
-      console.log(`Total documents in vendor_sales collection: ${vendorSalesCount}`);
-
-      // Counter for progress
-      let processedVendorSales = 0;
-
-      while (await cursor.hasNext()) {
-        processedVendorSales++;
-        console.log(`Processing ${processedVendorSales}/${vendorSalesCount} in vendor_sales collection`);
-        const vendorSalesDocument = await cursor.next();
-  
-        const productId = vendorSalesDocument.productInfo.productId;
-        console.log("Product ID:", productId);
-  
-        // Use productId to find vendorId in the other collection
-        const vendorDocument = await parentProductsCollection.findOne({ '_id': productId });
-  
-        if (vendorDocument) {
-          const vendorId = vendorDocument.vendor;
-  
-          // Update the vendorId in vendor_sales document
-          await vendorSalesCollection.updateOne(
-            { _id: vendorSalesDocument._id },
-            { $set: { 'productInfo.vendorId': vendorId } }
-          );
-  
-          console.log(`Added vendorId for orderId ${vendorSalesDocument.orderId} to ${vendorId}`);
-        } else {
-          console.log(`Vendor not found for orderId ${vendorSalesDocument.orderId}`);
-        }
+      if (sales.length === 0) {
+        console.log(`Sales not found`);
+        return null;
       }
-  
-      console.log('Finished updating vendorIds');
-
+      console.log('Sales found');
+      return sales;
     }
-    ///////ADD VENDOR ID TO VENDOR_SALES/////////////*/
 
-
-    //table
+    // Route for total sales
     app.get('/api/totalSales', async (req, res) => {
-      try{   
-        
-        //get vendorname
+      try {
         const vendorName = req.query.vendor;
         console.log(`totalSalesAPI: Received vendor name from React app: ${vendorName}`);
-    
-    
-        //get vendor 
-        const vendor = await vendorsCollection.findOne({ name: vendorName });
-        if (!vendor) 
-        {
-          console.log(`totalSalesAPI: Vendor not found`);
-          return res.status(404).json({ message: 'Vendor not found' });
+
+        const sales = await getSalesByVendor(vendorName);
+
+        if (!sales) {
+          return res.status(404).json({ message: 'Vendor or Sales not found' });
         }
-        else console.log(`totalSalesAPI: Vendor found: ${vendorName}`)
-        const vendorId = vendor._id;
-        
-    
-        //get sales 
-        const sales = await vendorSalesCollection.find({ 'productInfo.vendorId': vendorId }).toArray();
-        
-        if (sales.length === 0) 
-        {
-          console.log(`totalSalesAPI: Sales not found`); 
-          return res.status(404).json({ message: 'Sales not found' });
-        }
-        else console.log('totalSalesAPI: Sales found');
-            
-        
-    
-        //time to read the console for debugging before next function starts
-        const start = Date.now();
-        while (Date.now() - start < 1000) {}
-    
+
         return res.json(sales);
-        
-    
+
       } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal Server Error' });
       }
     });
-    
-    // graph
+
+    // Route for monthly sales
     app.get('/api/monthlySales', async (req, res) => {
       try {
-        // get vendor name
         const vendorName = req.query.vendor;
         console.log(`MonthlySalesAPI: Received vendor name from React app: ${vendorName}`);
 
-        // get vendor
-        const vendor = await vendorsCollection.findOne({ name: vendorName });
-        if (!vendor) {
-          console.log(`MonthlySalesAPI: Vendor not found`);
-          return res.status(404).json({ message: 'Vendor not found' });
-        } else {
-          console.log(`MonthlySalesAPI: Vendor found: ${vendorName}`);
+        const sales = await getSalesByVendor(vendorName);
+
+        if (!sales) {
+          return res.status(404).json({ message: 'Vendor or Sales not found' });
         }
-        const vendorId = vendor._id;
 
-        // get sales
-        const sales = await vendorSalesCollection.find({ 'productInfo.vendorId': vendorId }).toArray();
-
-        // create MonthlySalesData instance
         const monthlySalesData = new MonthlySalesData();
 
         for (const sale of sales) {
@@ -271,8 +142,6 @@ async function startServer() {
           const month = orderDate.getUTCMonth() + 1; // months are 0-based
 
           const monthlySale = monthlySalesData.findOrCreate(year, month);
-
-          // Update quantity and revenue for the monthly sale
           monthlySale.update(sale.productInfo.quantity, sale.productInfo.quantity * sale.productInfo.margin);
         }
 
@@ -284,6 +153,7 @@ async function startServer() {
       }
     });
 
+    // Start the server
     app.listen(port, () => {
       console.log(`Server is running on port: ${port}`);
     });
@@ -293,6 +163,8 @@ async function startServer() {
   }
 }
 
+// Call the startServer function to initiate the server
 startServer();
+
 
 
