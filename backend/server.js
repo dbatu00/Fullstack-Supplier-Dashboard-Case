@@ -99,6 +99,8 @@ async function startServer() {
         return null;
       }
       console.log('Sales found');
+      // Sort the sales array by order date in descending order (newer date first)
+      sales.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
       return sales;
     }
 
@@ -124,6 +126,9 @@ async function startServer() {
           },
           orderDate: sale.orderDate,
         }));
+        
+        
+
 
         return res.json(modifiedSales);
 
