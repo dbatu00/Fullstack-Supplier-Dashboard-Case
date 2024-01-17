@@ -1,3 +1,11 @@
+/* 
+ToDo:
+1-) api should not return "vendor or sales not" found but specify which one is not found
+2-) when server is closed and a button is clicked on client side, it should tell that server is closed
+3-) unit tests
+*/
+
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -78,9 +86,9 @@ async function startServer() {
   try {
     await connectToDatabase();
 
-    const ordersCollection = mongoose.connection.db.collection('Orders');
-    const vendorsCollection = mongoose.connection.db.collection('Vendors');
-    const parentProductsCollection = mongoose.connection.db.collection('parent_products');
+    //const ordersCollection = mongoose.connection.db.collection('Orders');
+    //const parentProductsCollection = mongoose.connection.db.collection('parent_products');
+    const vendorsCollection = mongoose.connection.db.collection('Vendors'); 
     const vendorSalesCollection = mongoose.connection.db.collection('vendor_sales');
 
     async function getSalesByVendor(vendorName) {
@@ -99,6 +107,7 @@ async function startServer() {
         return null;
       }
       console.log('Sales found');
+
       // Sort the sales array by order date in descending order (newer date first)
       sales.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
       return sales;
@@ -127,9 +136,6 @@ async function startServer() {
           orderDate: sale.orderDate,
         }));
         
-        
-
-
         return res.json(modifiedSales);
 
       } catch (error) {
