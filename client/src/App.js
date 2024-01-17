@@ -18,9 +18,10 @@ function App() {
 
   const containerStyle = {
     display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center', // Center horizontally
+    alignItems: 'flex-start', // Align to the top
     height: '100vh',
+    padding: '20px', // Add some space at the top
   };
 
   const buttonStyle = {
