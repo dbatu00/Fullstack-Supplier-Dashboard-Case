@@ -1,23 +1,15 @@
 /* styles.css */
-/* styles.css */
-button {
-    padding: 15px 25px;
-    font-size: 16px;
-    cursor: pointer;
-    background-color: #00AF00;
-    color: black;
-    border: 2px solid #228B22;
-    border-radius: 5px;
-    transition: background-color 0.3s ease, transform 0.2s cubic-bezier(0.47, 2.02, 0.31, -0.36);
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100vh;
+    padding: 20px;
+    background: linear-gradient(to bottom, #00fd00, #005f00);
   }
   
-  /* Add :active state for button depression effect */
-  button:active {
-    transform: scale(0.95); /* Slightly scale down the button when pressed */
-  }
-  
-  
-  input {
+  .input {
     margin-bottom: 10px;
     padding: 10px;
     font-size: 16px;
@@ -28,8 +20,27 @@ button {
     width: 300px;
   }
   
-  /* Add placeholder style */
-  input::placeholder {
+  .button-container {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .button {
+    padding: 15px 25px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #00AF00;
+    color: black;
+    border: 2px solid #228B22;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.2s cubic-bezier(0.47, 2.02, 0.31, -0.36);
+  }
+  
+  .button:active {
+    transform: scale(0.95);
+  }
+  
+  .input::placeholder {
     color: rgba(255, 255, 255, 0.7);
   }
   
