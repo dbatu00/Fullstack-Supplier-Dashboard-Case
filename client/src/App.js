@@ -11,6 +11,7 @@ function App() {
     alignItems: 'center',
     height: '100vh',
     padding: '20px', // Add some space at the top
+    background: 'linear-gradient(to bottom, #00fd00, #005f00)', // Gradient background
   };
 
   const inputStyle = {
