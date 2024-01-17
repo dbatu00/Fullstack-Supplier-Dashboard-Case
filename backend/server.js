@@ -3,6 +3,9 @@ ToDo:
 1-) api should not return "vendor or sales not" found but specify which one is not found
 2-) when server is closed and a button is clicked on client side, it should tell that server is closed
 3-) unit tests
+
+Notes:
+Some orders in the database do not have a vendor_margin field
 */
 
 
@@ -26,6 +29,8 @@ product oid: 61aac288433e0592d8baf554
 vendor oid: 61aac7f29955ef6272942997
 vendor name: 'Dilvin'
 */
+
+//demo no sale vendor name: 'Simone' 
 
 
 // MonthlySale struct
@@ -90,6 +95,109 @@ async function startServer() {
     //const parentProductsCollection = mongoose.connection.db.collection('parent_products');
     const vendorsCollection = mongoose.connection.db.collection('Vendors'); 
     const vendorSalesCollection = mongoose.connection.db.collection('vendor_sales');
+
+    //////MIGRATION/////////
+    //1-) get vendors
+    //2-) get products of vendors
+    //3-) get sales of the product
+    //4-) push sale info to vendor_sales
+    if (!migrationDone) 
+    {
+      console.log("Migration starts");
+      let searchedVendorCount = 0;
+      //1-)get vendor names
+      const vendors = await vendorsCollection.find({}, { projection: { _id: 1, name: 1 } }).toArray();
+      if (vendors.length === 0) 
+        console.log('No vendors found');
+      
+      for(const vendor of vendors)
+      {
+        searchedVendorCount++;
+        
+        //2-)get products collection
+        const products = await parentProductsCollection.find({ 'vendor': vendor._id }).toArray();
+        if (products.length != 0) 
+        {
+          console.log("Products found for vendor", searchedVendorCount);
+        }
+          
+        //3-)search orders for carts that have the product
+        let searchedProductCount = 0;
+        //for each product that a vendor lists:
+        //  a-)search order list to find a cart that has it
+        //  b-)get the relevant info and push to vendor_sales collection
+        for (const product of products) 
+        {
+          searchedProductCount++;
+          //a-)get order
+          const query = { 'cart_item.product': product._id };
+          const projection = { _id: 1, cart_item: { $elemMatch: { product: product._id } }, payment_at: 1 };
+          const order = await ordersCollection.findOne(query, { projection });
+          console.log(`Searching order for ${searchedProductCount} out of ${products.length} products for ${searchedVendorCount} out of ${vendors.length} vendors`);
+    
+          if (order) 
+          {
+            //b-)Push the order information to the vendor sales collection
+            const vendorSalesDocument = 
+            {
+                orderId: order._id,
+                productInfo: 
+                {
+                  productId: product._id,
+                  quantity: order.cart_item[0].quantity, // Assuming there's only one item in the cart for simplicity
+                  margin: order.cart_item[0].vendor_margin,
+                },
+                orderDate: order.payment_at,
+                }; 
+    
+            const result = await vendorSalesCollection.insertOne(vendorSalesDocument);
+            console.log('Inserted into vendor_sales collection:', result);
+          }
+        }
+      }
+    }
+    ////////MIGRATION////////
+
+
+    //////ADD VENDOR ID TO VENDOR_SALES//////////////
+    if(!vendorIDadded)
+    {
+      const cursor = vendorSalesCollection.find();
+      // Get the count of documents in the collections
+      const vendorSalesCount = await vendorSalesCollection.countDocuments();
+ 
+      console.log(`Total documents in vendor_sales collection: ${vendorSalesCount}`);
+      // Counter for progress
+      let processedVendorSales = 0;
+      while (await cursor.hasNext()) {
+        processedVendorSales++;
+        console.log(`Processing ${processedVendorSales}/${vendorSalesCount} in vendor_sales collection`);
+        const vendorSalesDocument = await cursor.next();
+  
+        const productId = vendorSalesDocument.productInfo.productId;
+        console.log("Product ID:", productId);
+  
+        // Use productId to find vendorId in the other collection
+        const vendorDocument = await parentProductsCollection.findOne({ '_id': productId });
+  
+        if (vendorDocument) {
+          const vendorId = vendorDocument.vendor;
+  
+          // Update the vendorId in vendor_sales document
+          await vendorSalesCollection.updateOne(
+            { _id: vendorSalesDocument._id },
+            { $set: { 'productInfo.vendorId': vendorId } }
+          );
+  
+          console.log(`Added vendorId for orderId ${vendorSalesDocument.orderId} to ${vendorId}`);
+        } else {
+          console.log(`Vendor not found for orderId ${vendorSalesDocument.orderId}`);
+        }
+      }
+  
+      console.log('Finished updating vendorIds');
+    }
+    ///////ADD VENDOR ID TO VENDOR_SALES/////////////
 
     async function getSalesByVendor(vendorName) {
       const vendor = await vendorsCollection.findOne({ name: vendorName });
