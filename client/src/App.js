@@ -85,7 +85,7 @@ function App() {
                   <td>{sale.productInfo.productId}</td>
                   <td>{sale.productInfo.quantity}</td>
                   <td>{sale.productInfo.margin}</td>
-                  <td>{/* Calculate total revenue */}</td>
+                  <td>{calculateRevenue(sale.productInfo)}</td>
                   <td>{sale.orderDate}</td>
                 </tr>
               ))}
@@ -95,6 +95,16 @@ function App() {
       );
     }
     return null;
+  };
+
+  const calculateRevenue = (productInfo) => {
+    const { quantity, margin } = productInfo;
+    if (quantity && margin) {
+      return quantity * margin;
+    } else {
+      // Handle cases where either quantity or margin is missing
+      return 'N/A';
+    }
   };
 
   return (
