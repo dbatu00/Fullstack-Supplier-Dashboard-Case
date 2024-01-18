@@ -63,6 +63,40 @@ function App() {
     }
   };
 
+  const renderTable = () => {
+    if (apiData && apiData.endpoint === 'totalSales') {
+      return (
+        <div className="table-container">
+          <table className="sales-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Product ID</th>
+                <th>Quantity</th>
+                <th>Margin</th>
+                <th>Total Revenue</th>
+                <th>Order Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {apiData.data.map((sale) => (
+                <tr key={sale.orderId}>
+                  <td>{sale.orderId}</td>
+                  <td>{sale.productInfo.productId}</td>
+                  <td>{sale.productInfo.quantity}</td>
+                  <td>{sale.productInfo.margin}</td>
+                  <td>{/* Calculate total revenue */}</td>
+                  <td>{sale.orderDate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="container">
       <input
@@ -78,6 +112,8 @@ function App() {
       </div>
 
       <div style={{ height: '20px' }}></div> {/* Add space here */}
+
+      {renderTable()}
 
       {apiData && apiData.message === 'No Sales' && (
       <div>No sales found.</div>
@@ -101,36 +137,7 @@ function App() {
         </ResponsiveContainer>
       )}
 
-{apiData && apiData.endpoint === 'totalSales' && (
-      <div style={{ marginTop: '20px', overflowX: 'auto' }}>
-        {apiData.data.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Product ID</th>
-                <th>Quantity</th>
-                <th>Margin</th>
-                <th>Order Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {apiData.data.map((item, index) => (
-                <tr key={index}>
-                  <td>{item.orderId}</td>
-                  <td>{item.productInfo.productId}</td>
-                  <td>{item.productInfo.quantity}</td>
-                  <td>{item.productInfo.margin}</td>
-                  <td>{item.orderDate}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div>No sales data available.</div>
-        )}
-      </div>
-    )}
+
      
     </div>
   );
