@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './styles.css';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 function App() {
   const [loading, setLoading] = useState(false);
@@ -8,29 +8,37 @@ function App() {
   const [apiData, setApiData] = useState(null);
   const [data, setData] = useState([]);
 
+
+  //checking for apidata nullness 3 times is bizarre but it does not work otherwise
   useEffect(() => {
-    if (apiData) {
-      // Assuming apiData is an array of objects with 'year', 'month', and 'totalRevenue' properties
-      const transformedData = apiData.map((item) => ({
+    if (apiData && apiData.message === 'No Sales' ) {}
+    else if(apiData && apiData.endpoint ==='monthlySales'){
+      const transformedData = apiData.data.map((item) => ({
         month: `${item.month}-${item.year}`,
         totalRevenue: item.totalRevenue,
       }));
 
       setData(transformedData.reverse());
     }
+    else if(apiData && apiData.endpoint ==='totalSales'){}
   }, [apiData]);
 
   const handleButtonClick = async (endpoint) => {
     try {
       setApiData(null); // Clear apiData before fetching new data
       setLoading(true);
+
       console.log(`Fetching data from /api/${endpoint} with vendor name ${vendor}`);
+      
       const response = await fetch(`http://localhost:5000/api/${endpoint}?vendor=${vendor}`);
       console.log('Fetched successfully');
       console.log('Response:', response);
+
       const data = await response.json();
-      console.log('Data:', data);
-      setApiData(data);
+      if(data.message === 'Vendor or Sales not found') setApiData({message: 'No Sales'});
+      else setApiData({data, endpoint})
+      
+     
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -58,16 +66,14 @@ function App() {
         </div>
       )}
 
-      {data.length > 0 && (
-        <ResponsiveContainer width="80%" height={400}>
+      {apiData && (
+        <ResponsiveContainer width="80%" height={500}>
           <BarChart data={data}>
           <XAxis dataKey="month" stroke="black" tick={{ fill: 'black' }} />
-          <YAxis stroke="black" tick={{ fill: 'black' }} />
+          <YAxis stroke="black" tick={{ fill: 'black' }} tickFormatter={(value) => `$${value}`} />
           <CartesianGrid strokeDasharray="3 3" stroke="black" />
           <Tooltip />
-          <Legend iconSize={20} iconType="rect" />
-          <Bar dataKey="totalRevenue" fill="#D2D000" />
-          <Legend iconSize={20} iconType="rect" />        
+          <Bar dataKey="totalRevenue" fill="#D2D000" />       
           </BarChart>
         </ResponsiveContainer>
       )}
