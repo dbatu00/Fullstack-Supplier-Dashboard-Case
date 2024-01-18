@@ -8,22 +8,17 @@ function App() {
   const [apiData, setApiData] = useState(null);
   const [data, setData] = useState([]);
 
-  const demoData = [
-    { year: 2023, month: 3, quantitySold: 29, totalRevenue: 38.28 },
-    { year: 2023, month: 2, quantitySold: 38, totalRevenue: 121.22 },
-    { year: 2023, month: 1, quantitySold: 83, totalRevenue: 211.44 },
-    // ... (add the rest of your data)
-  ];
-
   useEffect(() => {
-    // Transforming the API data into the format expected by recharts
-    const transformedData = demoData.map((item) => ({
-      month: `${item.month}-${item.year}`,
-      totalRevenue: item.totalRevenue,
-    }));
+    if (apiData) {
+      // Assuming apiData is an array of objects with 'year', 'month', and 'totalRevenue' properties
+      const transformedData = apiData.map((item) => ({
+        month: `${item.month}-${item.year}`,
+        totalRevenue: item.totalRevenue,
+      }));
 
-    setData(transformedData);
-  }, [demoData]);
+      setData(transformedData);
+    }
+  }, [apiData]);
 
   const handleButtonClick = async (endpoint) => {
     try {
@@ -56,28 +51,24 @@ function App() {
         <button className='button' onClick={() => handleButtonClick('monthlySales')}>Monthly Sales</button>
         <button className='button' onClick={() => handleButtonClick('totalSales')}>Total Sales</button>
       </div>
+
       {loading && (
         <div className="spinner-container">
           <div className="spinner"></div>
         </div>
       )}
 
-      {apiData && (
-        <div>
-          <h2>API Data:</h2>
-          <pre>{JSON.stringify(apiData, null, 2)}</pre>
-        </div>
+      {data.length > 0 && (
+        <ResponsiveContainer width="80%" height={400}>
+          <BarChart data={data}>
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="totalRevenue" fill="#8884d8" />
+          </BarChart>
+        </ResponsiveContainer>
       )}
-
-      <ResponsiveContainer width="80%" height={300}>
-        <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <XAxis dataKey="month" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="totalRevenue" fill="#8884d8" />
-        </BarChart>
-      </ResponsiveContainer>
     </div>
   );
 }
