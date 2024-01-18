@@ -9,9 +9,9 @@ function App() {
   const [data, setData] = useState([]);
 
 
-  //checking for apidata nullness 3 times is bizarre but it does not work otherwise
+  //checking for apiData nullness 3 times is bizarre but it does not work otherwise
   useEffect(() => {
-    if (apiData && apiData.message === 'No Sales' ) {}
+    if (apiData && apiData.message === 'No Sales' ) {setData([]);}
     else if(apiData && apiData.endpoint ==='monthlySales'){
       const transformedData = apiData.data.map((item) => ({
         month: `${item.month}-${item.year}`,
@@ -20,7 +20,7 @@ function App() {
 
       setData(transformedData.reverse());
     }
-    else if(apiData && apiData.endpoint ==='totalSales'){}
+    else if(apiData && apiData.endpoint ==='totalSales'){setData([]);}
   }, [apiData]);
 
   const handleButtonClick = async (endpoint) => {
@@ -60,13 +60,19 @@ function App() {
         <button className='button' onClick={() => handleButtonClick('totalSales')}>Total Sales</button>
       </div>
 
+      <div style={{ height: '20px' }}></div> {/* Add space here */}
+
+      {apiData && apiData.message === 'No Sales' && (
+      <div>No sales found.</div>
+      )}
+
       {loading && (
         <div className="spinner-container">
           <div className="spinner"></div>
         </div>
       )}
 
-      {apiData && (
+      {apiData && apiData.endpoint === 'monthlySales' && (
         <ResponsiveContainer width="80%" height={500}>
           <BarChart data={data}>
           <XAxis dataKey="month" stroke="black" tick={{ fill: 'black' }} />
@@ -77,6 +83,33 @@ function App() {
           </BarChart>
         </ResponsiveContainer>
       )}
+
+      {apiData && apiData.endpoint === 'totalSales' && (
+      <div style={{ marginTop: '20px', overflowX: 'auto' }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>ProductID</th>
+              <th>Quantity</th>
+              <th>Margin</th>
+              <th>Total Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* Replace with your demo data for total sales */}
+            <tr>
+              <td>2023-03</td>
+              <td>ABC123</td>
+              <td>50</td>
+              <td>10%</td>
+              <td>$500</td>
+            </tr>
+            {/* Add more rows as needed */}
+          </tbody>
+        </table>
+      </div>
+    )}
     </div>
   );
 }
