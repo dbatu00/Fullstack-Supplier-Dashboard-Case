@@ -84,32 +84,8 @@ function App() {
         </ResponsiveContainer>
       )}
 
-      {apiData && apiData.endpoint === 'totalSales' && (
-      <div style={{ marginTop: '20px', overflowX: 'auto' }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>ProductID</th>
-              <th>Quantity</th>
-              <th>Margin</th>
-              <th>Total Revenue</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Replace with your demo data for total sales */}
-            <tr>
-              <td>2023-03</td>
-              <td>ABC123</td>
-              <td>50</td>
-              <td>10%</td>
-              <td>$500</td>
-            </tr>
-            {/* Add more rows as needed */}
-          </tbody>
-        </table>
-      </div>
-    )}
+      {apiData && apiData.endpoint === 'totalSales' && (<div>Table.</div>)}
+     
     </div>
   );
 }
