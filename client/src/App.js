@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './styles.css';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 function App() {
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ function App() {
         totalRevenue: item.totalRevenue,
       }));
 
-      setData(transformedData);
+      setData(transformedData.reverse());
     }
   }, [apiData]);
 
@@ -61,11 +61,13 @@ function App() {
       {data.length > 0 && (
         <ResponsiveContainer width="80%" height={400}>
           <BarChart data={data}>
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="totalRevenue" fill="#8884d8" />
+          <XAxis dataKey="month" stroke="black" tick={{ fill: 'black' }} />
+          <YAxis stroke="black" tick={{ fill: 'black' }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="black" />
+          <Tooltip />
+          <Legend iconSize={20} iconType="rect" />
+          <Bar dataKey="totalRevenue" fill="#D2D000" />
+          <Legend iconSize={20} iconType="rect" />        
           </BarChart>
         </ResponsiveContainer>
       )}
