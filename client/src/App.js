@@ -9,19 +9,36 @@ function App() {
   const [data, setData] = useState([]);
 
 
-  //checking for apiData nullness 3 times is bizarre but it does not work otherwise
   useEffect(() => {
-    if (apiData && apiData.message === 'No Sales' ) {setData([]);}
-    else if(apiData && apiData.endpoint ==='monthlySales'){
+    if (apiData && apiData.message === 'No Sales') {
+      setData([]);
+    } else if (apiData && apiData.endpoint === 'monthlySales') {
       const transformedData = apiData.data.map((item) => ({
         month: `${item.month}-${item.year}`,
         totalRevenue: item.totalRevenue,
       }));
-
+  
       setData(transformedData.reverse());
+    } else if (apiData && apiData.endpoint === 'totalSales') {
+      if (apiData.data && apiData.data.length > 0) {
+        // Modify the response to exclude _id and vendorId
+        const modifiedSales = apiData.data.map((sale) => ({
+          orderId: sale.orderId,
+          productInfo: {
+            productId: sale.productInfo.productId,
+            quantity: sale.productInfo.quantity,
+            margin: sale.productInfo.margin,
+          },
+          orderDate: sale.orderDate,
+        }));
+  
+        setData(modifiedSales);
+      } else {
+        setData([]);
+      }
     }
-    else if(apiData && apiData.endpoint ==='totalSales'){setData([]);}
   }, [apiData]);
+  
 
   const handleButtonClick = async (endpoint) => {
     try {
@@ -84,7 +101,36 @@ function App() {
         </ResponsiveContainer>
       )}
 
-      {apiData && apiData.endpoint === 'totalSales' && (<div>Table.</div>)}
+{apiData && apiData.endpoint === 'totalSales' && (
+      <div style={{ marginTop: '20px', overflowX: 'auto' }}>
+        {apiData.data.length > 0 ? (
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Product ID</th>
+                <th>Quantity</th>
+                <th>Margin</th>
+                <th>Order Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {apiData.data.map((item, index) => (
+                <tr key={index}>
+                  <td>{item.orderId}</td>
+                  <td>{item.productInfo.productId}</td>
+                  <td>{item.productInfo.quantity}</td>
+                  <td>{item.productInfo.margin}</td>
+                  <td>{item.orderDate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div>No sales data available.</div>
+        )}
+      </div>
+    )}
      
     </div>
   );
