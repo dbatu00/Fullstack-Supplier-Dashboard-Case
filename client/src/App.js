@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './styles.css';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 function App() {
   const [loading, setLoading] = useState(false);
-  const [vendor, setVendor] = useState('');
+  const [vendor, setVendor] = useState('Robin');
   const [apiData, setApiData] = useState(null);
+  const [data, setData] = useState([]);
+
+  const demoData = [
+    { year: 2023, month: 3, quantitySold: 29, totalRevenue: 38.28 },
+    { year: 2023, month: 2, quantitySold: 38, totalRevenue: 121.22 },
+    { year: 2023, month: 1, quantitySold: 83, totalRevenue: 211.44 },
+    // ... (add the rest of your data)
+  ];
+
+  useEffect(() => {
+    // Transforming the API data into the format expected by recharts
+    const transformedData = demoData.map((item) => ({
+      month: `${item.month}-${item.year}`,
+      totalRevenue: item.totalRevenue,
+    }));
+
+    setData(transformedData);
+  }, [demoData]);
 
   const handleButtonClick = async (endpoint) => {
     try {
@@ -49,6 +68,16 @@ function App() {
           <pre>{JSON.stringify(apiData, null, 2)}</pre>
         </div>
       )}
+
+      <ResponsiveContainer width="80%" height={300}>
+        <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <XAxis dataKey="month" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Bar dataKey="totalRevenue" fill="#8884d8" />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
